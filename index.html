@@ -1,0 +1,1127 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AlphaLUB Order</title>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  background: #0f1117; color: #e8e8e8; min-height: 100vh;
+}
+
+/* ── NAV TABS ── */
+.nav-tabs {
+  display: flex; background: #0a0c12;
+  border-bottom: 1px solid #2a2d3a; position: sticky; top: 0; z-index: 50;
+}
+.nav-tab {
+  flex: 1; padding: 14px 8px; font-size: 0.78rem; font-weight: 600;
+  color: #666; text-align: center; cursor: pointer; letter-spacing: 0.05em;
+  text-transform: uppercase; border-bottom: 2px solid transparent;
+  transition: all 0.2s;
+}
+.nav-tab.active { color: #f0b429; border-bottom-color: #f0b429; }
+
+/* ── PAGES ── */
+.page { display: none; padding: 16px; }
+.page.active { display: block; }
+
+h1 {
+  text-align: center; font-size: 1.2rem; font-weight: 700;
+  letter-spacing: 0.08em; color: #f0b429; margin-bottom: 4px; text-transform: uppercase;
+}
+.subtitle { text-align: center; font-size: 0.72rem; color: #666; margin-bottom: 20px; letter-spacing: 0.04em; }
+
+.card {
+  background: #1a1d27; border: 1px solid #2a2d3a;
+  border-radius: 12px; padding: 16px; margin-bottom: 14px;
+}
+.card-title {
+  font-size: 0.7rem; font-weight: 600; color: #f0b429;
+  letter-spacing: 0.1em; text-transform: uppercase; margin-bottom: 10px;
+}
+label {
+  display: block; font-size: 0.75rem; color: #888;
+  margin-bottom: 4px; margin-top: 10px;
+}
+label:first-of-type { margin-top: 0; }
+select, input[type="text"], input[type="date"], input[type="number"], textarea {
+  width: 100%; background: #0f1117; border: 1px solid #2a2d3a;
+  border-radius: 8px; color: #e8e8e8; padding: 10px 12px;
+  font-size: 0.85rem; outline: none; transition: border-color 0.2s;
+}
+select:focus, input:focus, textarea:focus { border-color: #f0b429; }
+textarea { resize: vertical; min-height: 60px; }
+
+/* ── SHARED DROPDOWN ── */
+.dropdown {
+  position: absolute; top: calc(100% + 4px); left: 0; right: 0;
+  background: #1e2130; border: 1px solid #f0b429; border-radius: 8px;
+  z-index: 200; max-height: 240px; overflow-y: auto; display: none;
+}
+.dropdown.open { display: block; }
+.drop-item {
+  padding: 9px 12px; cursor: pointer;
+  border-bottom: 1px solid #2a2d3a; font-size: 0.8rem;
+}
+.drop-item:last-child { border-bottom: none; }
+.drop-item:hover { background: #252839; }
+.drop-item .prod-name { color: #e8e8e8; font-weight: 500; }
+.drop-item .prod-meta { color: #888; font-size: 0.72rem; margin-top: 2px; }
+.drop-cat {
+  padding: 5px 12px; font-size: 0.65rem; color: #f0b429; font-weight: 700;
+  letter-spacing: 0.08em; text-transform: uppercase;
+  background: #161824; border-bottom: 1px solid #2a2d3a;
+}
+
+/* ── CUSTOMER SEARCH ── */
+.cust-wrap { position: relative; }
+#custSearch { padding-right: 36px; cursor: pointer; }
+.search-icon {
+  position: absolute; right: 12px; top: 50%; transform: translateY(-50%);
+  color: #555; pointer-events: none; font-size: 0.9rem;
+}
+
+/* ── PRODUCT ROWS ── */
+.prod-header { display: flex; gap: 6px; margin-bottom: 6px; padding: 0 2px; }
+.ph-product { flex: 1; font-size: 0.65rem; font-weight: 700; color: #666; letter-spacing: 0.08em; text-transform: uppercase; }
+.ph-qty { width: 62px; font-size: 0.65rem; font-weight: 700; color: #666; letter-spacing: 0.08em; text-transform: uppercase; text-align: center; flex-shrink: 0; }
+.prod-row { display: flex; align-items: center; gap: 6px; margin-bottom: 8px; }
+.prod-row-select-wrap { flex: 1; position: relative; }
+.prod-row-btn {
+  width: 100%; background: #0f1117; border: 1px solid #2a2d3a; border-radius: 8px;
+  color: #555; padding: 10px 28px 10px 12px; font-size: 0.82rem; text-align: left;
+  cursor: pointer; outline: none; transition: border-color 0.2s;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.prod-row-btn.selected { color: #e8e8e8; border-color: #3a3d4a; }
+.prod-row-btn:focus { border-color: #f0b429; }
+.prod-row-chevron {
+  position: absolute; right: 10px; top: 50%; transform: translateY(-50%);
+  color: #555; pointer-events: none; font-size: 0.75rem;
+}
+.prod-row-dropdown {
+  position: absolute; top: calc(100% + 4px); left: 0; right: 0;
+  background: #1e2130; border: 1px solid #f0b429; border-radius: 8px;
+  z-index: 300; max-height: 240px; overflow-y: auto; display: none;
+}
+.prod-row-dropdown.open { display: block; }
+.prd-search {
+  width: 100%; background: #13151e; border: none;
+  border-bottom: 1px solid #2a2d3a; border-radius: 8px 8px 0 0;
+  color: #e8e8e8; padding: 9px 12px; font-size: 0.8rem; outline: none;
+}
+.qty-input {
+  width: 62px !important; padding: 10px 4px !important;
+  text-align: center; flex-shrink: 0;
+}
+.btn-remove-row {
+  width: 36px; height: 40px; background: #1a0f0f; border: 1px solid #3a1f1f;
+  border-radius: 8px; color: #c04040; font-size: 1rem; cursor: pointer;
+  flex-shrink: 0; display: flex; align-items: center; justify-content: center;
+  transition: background 0.2s;
+}
+.btn-remove-row:hover { background: #2a1010; }
+.btn-add-row {
+  width: 100%; background: transparent; border: 1.5px dashed #f0b429;
+  border-radius: 8px; color: #f0b429; padding: 11px; font-size: 0.85rem;
+  font-weight: 600; cursor: pointer; margin-bottom: 4px; letter-spacing: 0.05em;
+  transition: background 0.2s;
+}
+.btn-add-row:hover { background: #1e1a0a; }
+
+/* ── TOTAL ROW ── */
+.total-row {
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 8px 0; border-top: 1px solid #2a2d3a; margin-top: 6px;
+}
+.total-label { font-size: 0.78rem; color: #888; }
+.total-amount { font-size: 1.1rem; font-weight: 700; color: #f0b429; }
+
+/* ── PHONE ROW ── */
+.phone-row { display: flex; align-items: center; }
+.phone-prefix {
+  background: #0f1117; border: 1px solid #2a2d3a; border-right: none;
+  border-radius: 8px 0 0 8px; color: #f0b429; font-size: 0.85rem;
+  font-weight: 600; padding: 10px 10px; white-space: nowrap; flex-shrink: 0;
+}
+#waNumber { border-radius: 0 8px 8px 0 !important; flex: 1; }
+
+/* ── BILL ROW ── */
+.bill-row { display: flex; gap: 8px; }
+.bill-row select { flex: 1; }
+
+/* ── GENERATE BUTTON ── */
+.btn-generate {
+  width: 100%; background: linear-gradient(135deg, #f0b429, #e08a00);
+  border: none; border-radius: 12px; color: #0f1117; font-size: 1rem;
+  font-weight: 700; padding: 14px; cursor: pointer; letter-spacing: 0.05em;
+  text-transform: uppercase; margin-bottom: 12px; transition: opacity 0.2s;
+}
+.btn-generate:hover { opacity: 0.9; }
+
+/* ── PREVIEW ── */
+.preview-box {
+  background: #0a0c12; border: 1px solid #2a2d3a; border-radius: 12px;
+  padding: 16px; font-family: monospace; font-size: 0.82rem; line-height: 1.7;
+  white-space: pre-wrap; color: #ccc; margin-bottom: 12px; display: none;
+}
+.preview-box.show { display: block; }
+.btn-copy {
+  width: 100%; background: #1a1d27; border: 1px solid #f0b429; border-radius: 12px;
+  color: #f0b429; font-size: 0.9rem; font-weight: 600; padding: 12px;
+  cursor: pointer; display: none; transition: background 0.2s; margin-bottom: 8px;
+}
+.btn-copy.show { display: block; }
+.btn-copy:hover { background: #252030; }
+.btn-wa {
+  width: 100%; background: #1a3a1a; border: 1px solid #25d366; border-radius: 12px;
+  color: #25d366; font-size: 0.9rem; font-weight: 600; padding: 12px;
+  cursor: pointer; display: none; transition: background 0.2s;
+}
+.btn-wa.show { display: block; }
+.btn-wa:hover { background: #1e401e; }
+
+/* ── HISTORY PAGE ── */
+.hist-filters {
+  display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 10px;
+}
+.hist-filters select, .hist-filters input { width: 100%; }
+.hist-filters .full-row { grid-column: 1 / -1; }
+.date-range-row { display: flex; gap: 6px; align-items: center; }
+.date-range-row span { color: #555; font-size: 0.78rem; flex-shrink: 0; }
+.date-range-row input { flex: 1; }
+
+.hist-summary {
+  display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 14px;
+}
+.stat-box {
+  background: #1a1d27; border: 1px solid #2a2d3a; border-radius: 10px; padding: 12px;
+}
+.stat-label { font-size: 0.65rem; color: #888; letter-spacing: 0.08em; text-transform: uppercase; margin-bottom: 4px; }
+.stat-value { font-size: 1.05rem; font-weight: 700; color: #f0b429; }
+
+.sort-row {
+  display: flex; gap: 6px; align-items: center; margin-bottom: 12px;
+}
+.sort-row label { margin: 0; white-space: nowrap; font-size: 0.72rem; color: #888; flex-shrink: 0; }
+.sort-row select { flex: 1; padding: 8px 10px; font-size: 0.78rem; }
+
+.order-card {
+  background: #1a1d27; border: 1px solid #2a2d3a; border-radius: 10px;
+  padding: 12px; margin-bottom: 10px; transition: border-color 0.2s;
+}
+.order-card:hover { border-color: #3a3d4a; }
+.order-card-top {
+  display: flex; justify-content: space-between; align-items: flex-start; gap: 8px;
+}
+.order-card-customer { font-size: 0.88rem; font-weight: 600; color: #e8e8e8; }
+.order-card-date { font-size: 0.72rem; color: #888; }
+.order-card-items { font-size: 0.75rem; color: #aaa; margin-top: 5px; }
+.order-card-total { font-size: 0.9rem; font-weight: 700; color: #f0b429; white-space: nowrap; }
+.order-card-bill { font-size: 0.68rem; color: #666; margin-top: 3px; }
+.order-card-actions { display: flex; gap: 6px; margin-top: 10px; }
+.btn-edit-order, .btn-del-order {
+  flex: 1; padding: 7px; border-radius: 7px; font-size: 0.75rem;
+  font-weight: 600; cursor: pointer; border: none; transition: opacity 0.2s;
+}
+.btn-edit-order { background: #1e2a10; border: 1px solid #4a7a20; color: #7acc30; }
+.btn-edit-order:hover { opacity: 0.85; }
+.btn-del-order  { background: #2a1010; border: 1px solid #6a2020; color: #e05555; }
+.btn-del-order:hover  { opacity: 0.85; }
+
+.prod-tag {
+  display: inline-block; background: #1e2130; border: 1px solid #3a3d4a;
+  border-radius: 4px; padding: 2px 7px; margin: 2px 2px 0 0;
+  font-size: 0.7rem; color: #bbb;
+}
+.prod-tag span { color: #f0b429; font-weight: 600; }
+
+.empty-hist { text-align: center; color: #555; font-size: 0.85rem; padding: 40px 0; }
+
+.prod-summary-section { margin-bottom: 14px; }
+.prod-summary-row {
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 7px 0; border-bottom: 1px solid #1e2130; font-size: 0.8rem;
+}
+.prod-summary-row:last-child { border-bottom: none; }
+.prod-summary-name { color: #ccc; flex: 1; }
+.prod-summary-qty { color: #f0b429; font-weight: 600; width: 60px; text-align: right; flex-shrink: 0; }
+
+/* ── EDIT MODAL ── */
+.modal-overlay {
+  display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.75);
+  z-index: 500; overflow-y: auto; padding: 20px 16px;
+}
+.modal-overlay.open { display: block; }
+.modal-box {
+  background: #1a1d27; border: 1px solid #f0b429; border-radius: 14px;
+  padding: 18px; max-width: 480px; margin: 0 auto;
+}
+.modal-title {
+  font-size: 0.85rem; font-weight: 700; color: #f0b429;
+  letter-spacing: 0.08em; text-transform: uppercase; margin-bottom: 14px;
+}
+.modal-actions { display: flex; gap: 8px; margin-top: 16px; }
+.btn-modal-save {
+  flex: 1; background: linear-gradient(135deg,#f0b429,#e08a00);
+  border: none; border-radius: 10px; color: #0f1117;
+  font-size: 0.88rem; font-weight: 700; padding: 12px; cursor: pointer;
+}
+.btn-modal-cancel {
+  flex: 1; background: #13151e; border: 1px solid #2a2d3a;
+  border-radius: 10px; color: #888; font-size: 0.88rem;
+  font-weight: 600; padding: 12px; cursor: pointer;
+}
+.modal-prod-row {
+  display: flex; align-items: center; gap: 6px; margin-bottom: 8px;
+}
+.modal-prod-select {
+  flex: 1; padding: 8px 10px; font-size: 0.78rem;
+  background: #0f1117; border: 1px solid #2a2d3a;
+  border-radius: 8px; color: #e8e8e8; outline: none;
+}
+.modal-qty { width: 62px; text-align: center; }
+.btn-modal-add-prod {
+  width: 100%; background: transparent; border: 1.5px dashed #f0b429;
+  border-radius: 8px; color: #f0b429; padding: 9px; font-size: 0.8rem;
+  font-weight: 600; cursor: pointer; margin: 6px 0;
+}
+
+::-webkit-scrollbar { width: 4px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: #2a2d3a; border-radius: 4px; }
+</style>
+</head>
+<body>
+
+<!-- NAV -->
+<div class="nav-tabs">
+  <div class="nav-tab active" onclick="showPage('order')">📝 Order</div>
+  <div class="nav-tab" onclick="showPage('history')">📊 Dashboard</div>
+</div>
+
+<!-- ══ ORDER PAGE ══ -->
+<div class="page active" id="page-order">
+<h1>AlphaLUB Order</h1>
+<div class="subtitle">Tokyo Asia Resources Sdn Bhd</div>
+
+<!-- Customer -->
+<div class="card">
+  <div class="card-title">客户 Customer</div>
+  <label>Customer Name</label>
+  <div class="cust-wrap" id="custWrap">
+    <input type="text" id="custSearch" placeholder="Search customer..." autocomplete="off" readonly>
+    <span class="search-icon">▾</span>
+    <div class="dropdown" id="custDropdown"></div>
+  </div>
+  <input type="hidden" id="customerSelect">
+  <label>Date</label>
+  <input type="date" id="orderDate">
+</div>
+
+<!-- Products -->
+<div class="card">
+  <div class="card-title">产品 Products</div>
+  <div class="prod-header">
+    <span class="ph-product">PRODUCT</span>
+    <span class="ph-qty">QTY</span>
+  </div>
+  <div id="productRows"></div>
+  <button class="btn-add-row" onclick="addProductRow()">+ Add Product</button>
+  <div class="total-row">
+    <span class="total-label">TOTAL (CTN × QTY)</span>
+    <span class="total-amount" id="totalAmount">RM 0.00</span>
+  </div>
+</div>
+
+<!-- Remarks & Bill -->
+<div class="card">
+  <div class="card-title">备注 Remarks</div>
+  <label>Remarks (optional)</label>
+  <textarea id="remarks" placeholder="e.g. Urgent !"></textarea>
+  <label>Bill Month</label>
+  <div class="bill-row">
+    <select id="billMonth">
+      <option value="Jan">January</option><option value="Feb">February</option>
+      <option value="Mar">March</option><option value="Apr">April</option>
+      <option value="May">May</option><option value="Jun" selected>June</option>
+      <option value="Jul">July</option><option value="Aug">August</option>
+      <option value="Sep">September</option><option value="Oct">October</option>
+      <option value="Nov">November</option><option value="Dec">December</option>
+    </select>
+    <select id="billYear">
+      <option value="2025">2025</option>
+      <option value="2026" selected>2026</option>
+      <option value="2027">2027</option>
+    </select>
+  </div>
+</div>
+
+<button class="btn-generate" onclick="generateMessage()">⚡ Generate WhatsApp Message</button>
+<div class="preview-box" id="previewBox"></div>
+<button class="btn-copy" id="btnCopy" onclick="copyMessage()">📋 Copy Message</button>
+<button class="btn-wa" id="btnWa" onclick="openWhatsApp()">💬 Send to +601133633168</button>
+</div><!-- end page-order -->
+
+
+<!-- ══ DASHBOARD PAGE ══ -->
+<div class="page" id="page-history">
+<h1 style="margin-top:8px">Dashboard</h1>
+<div class="subtitle">Sales Overview &amp; Order Management</div>
+
+<!-- Filters -->
+<div class="card">
+  <div class="card-title">筛选 Filter &amp; Sort</div>
+  <div class="hist-filters">
+    <select id="filterYear" onchange="renderHistory()">
+      <option value="">All Years</option>
+      <option value="2025">2025</option>
+      <option value="2026" selected>2026</option>
+      <option value="2027">2027</option>
+    </select>
+    <select id="filterMonth" onchange="renderHistory()">
+      <option value="">All Months</option>
+      <option value="Jan">Jan</option><option value="Feb">Feb</option>
+      <option value="Mar">Mar</option><option value="Apr">Apr</option>
+      <option value="May">May</option><option value="Jun">Jun</option>
+      <option value="Jul">Jul</option><option value="Aug">Aug</option>
+      <option value="Sep">Sep</option><option value="Oct">Oct</option>
+      <option value="Nov">Nov</option><option value="Dec">Dec</option>
+    </select>
+    <div class="full-row date-range-row">
+      <input type="date" id="filterDateFrom" onchange="renderHistory()" placeholder="From">
+      <span>→</span>
+      <input type="date" id="filterDateTo" onchange="renderHistory()" placeholder="To">
+    </div>
+    <input class="full-row" type="text" id="filterCustomer" placeholder="🔍 Search customer..." oninput="renderHistory()">
+    <select id="filterProduct" onchange="renderHistory()">
+      <option value="">All Products</option>
+    </select>
+    <button class="full-row" style="background:#13151e;border:1px solid #2a2d3a;border-radius:8px;color:#888;padding:9px;font-size:0.78rem;cursor:pointer" onclick="clearFilters()">✕ Clear Filters</button>
+  </div>
+  <div class="sort-row">
+    <label>Sort:</label>
+    <select id="sortBy" onchange="renderHistory()">
+      <option value="date_desc">Date (Newest)</option>
+      <option value="date_asc">Date (Oldest)</option>
+      <option value="total_desc">Amount (High→Low)</option>
+      <option value="total_asc">Amount (Low→High)</option>
+      <option value="ctn_desc">Cartons (High→Low)</option>
+      <option value="customer_asc">Customer (A→Z)</option>
+    </select>
+  </div>
+</div>
+
+<!-- Summary stats -->
+<div class="hist-summary" id="histSummary"></div>
+
+<!-- Product summary -->
+<div class="card prod-summary-section" id="prodSummaryCard" style="display:none">
+  <div class="card-title">产品箱数统计 Product Summary</div>
+  <div id="prodSummaryRows"></div>
+</div>
+
+<!-- Order cards -->
+<div id="historyList"></div>
+</div><!-- end page-history -->
+
+<!-- ══ EDIT MODAL ══ -->
+<div class="modal-overlay" id="editModal">
+  <div class="modal-box">
+    <div class="modal-title">✏️ Edit Order</div>
+    <input type="hidden" id="editOrderId">
+
+    <label>Customer</label>
+    <div class="cust-wrap" id="editCustWrap">
+      <input type="text" id="editCustSearch" placeholder="Search customer..." autocomplete="off" readonly>
+      <span class="search-icon">▾</span>
+      <div class="dropdown" id="editCustDropdown"></div>
+    </div>
+    <input type="hidden" id="editCustomerVal">
+
+    <label>Date</label>
+    <input type="date" id="editDate">
+
+    <label>Bill Month / Year</label>
+    <div class="bill-row">
+      <select id="editBillMonth">
+        <option value="Jan">January</option><option value="Feb">February</option>
+        <option value="Mar">March</option><option value="Apr">April</option>
+        <option value="May">May</option><option value="Jun">June</option>
+        <option value="Jul">July</option><option value="Aug">August</option>
+        <option value="Sep">September</option><option value="Oct">October</option>
+        <option value="Nov">November</option><option value="Dec">December</option>
+      </select>
+      <select id="editBillYear">
+        <option value="2025">2025</option><option value="2026">2026</option><option value="2027">2027</option>
+      </select>
+    </div>
+
+    <label>Remarks</label>
+    <textarea id="editRemarks" placeholder="Remarks..."></textarea>
+
+    <label>Products</label>
+    <div id="editProductRows"></div>
+    <button class="btn-modal-add-prod" onclick="addEditProductRow()">+ Add Product</button>
+
+    <div class="total-row">
+      <span class="total-label">TOTAL (CTN)</span>
+      <span class="total-amount" id="editTotalAmount">RM 0.00</span>
+    </div>
+
+    <div class="modal-actions">
+      <button class="btn-modal-cancel" onclick="closeEditModal()">Cancel</button>
+      <button class="btn-modal-save" onclick="saveEditOrder()">Save Changes</button>
+    </div>
+  </div>
+</div>
+
+
+<script>
+// ══════════════════════════════════════════
+// CUSTOMERS
+// ══════════════════════════════════════════
+const CUSTOMERS = [
+  "AH SIN (TPA0037)","AMG ADVANCED (TPA0095)",
+  "BS AUTOMOTIVE (TPB0052)",
+  "CARWELLS (TPC0093)","CAR WORLD (TPC0094)","CHAI FONG (TPC0071)",
+  "CHANG SHENG (TPS0177)","CHEE KIN CHEONG (TPC0073)","CHIN TA (TPC0139)",
+  "CKF AUTO (TPC0130)","CK LINGGI (TPC0111)","CROSS PERFORMANCE (TPC0122)",
+  "CW CAR (TPC0140)","CYSL (TPC0058)",
+  "D BUDAYA (TPD0010)","DESA AMAN (TPD0029)",
+  "E MAGE (TPE0026)",
+  "FOH HING (TPF0009)",
+  "HAO BROTHER (TPH0122)","HHY POWER (TPH0111)","HONG FAI (TPH0124)",
+  "HUP WOH (TPS0189)","HYPER LINK (TPH0106)",
+  "JACK AUTOPART (TPJ0054)","JIN HUAT (TPJ0036)","JIZEL AUTO (TPJ0051)",
+  "KIM MENG (TPK0121)","KIM SING (TPK0007)","KERETA LEONG (TPL0071)",
+  "KKA (TPK0048)","K K KOH (TPK0135)",
+  "LKH CITY (TPL0058)","LHK AUTO (TPL0079)",
+  "MAGICAL (TPM0050)","MOBILE AUDIO (TPM0078)","MY AUTO (TPM0057)",
+  "NAM SING (TPN0036)",
+  "PRECISION CAR (TPP0037)","PREMIUM CAR (TPP0054)","PRO V (TPP0040)",
+  "RS BORNEO (TPR0015)",
+  "S.A AUTOMOBILE (TPS0186)","SAVE AUTO (TPS0176)","SENG HENG (TPS0112)",
+  "SG AUTO (TPS0046)","SHENG YEE (TPS0167)","SHIA AUTO (TPS0173)",
+  "SK POWERFUL (TPS0202)","SLWH (TPS0091)","SOON HING (TPS0197)",
+  "SOUND CITY (TPS0148)","SPEED AUTO (TPS0212)","SRI JAYA (TPS0118)",
+  "STAR MARS (TPS0150)","SUPERIOR CAR (TPS0221)",
+  "TCARE AUTO (TPT0148)","TECHLIFT (TPT0056)","THE CAR (TPT0103)","T LINE (TPT0141)",
+  "ULTRA SPEED (TPU0019)",
+  "VMAX (TPV0010)","VH TYRE (TPV0020)","VOLKSTECH (TPV0015)","VUN GIN HUEI (TPV0016)",
+  "WAI FANG (TPW0031)","WENG LEONG (TPW0077)","WIN AUTO (TPW0081)","WJ GROUP (TPW0063)",
+  "XPRO (TPX0006)",
+  "YEOW SENG (TPY0073)","YOO GARAGE (TPY0088)","YONG AUTO (TPY0056)"
+];
+
+// ══════════════════════════════════════════
+// PRODUCTS (from PDF 01.05.2026)
+// ══════════════════════════════════════════
+const PRODUCTS = [
+  // PETROL FULLY
+  {cat:"PETROL FULLY",  name:"GT01",    grade:"0W-20", spec:"SN",  vol:"4L",    ctnPrice:696,   unitPrice:116.00},
+  {cat:"PETROL FULLY",  name:"GT02",    grade:"5W-40", spec:"SN",  vol:"4L",    ctnPrice:948,   unitPrice:158.00},
+  {cat:"PETROL FULLY",  name:"GT02",    grade:"5W-40", spec:"SN",  vol:"1L",    ctnPrice:1008,  unitPrice:42.00},
+  {cat:"PETROL FULLY",  name:"Ultra99", grade:"5W-40", spec:"SN",  vol:"4L",    ctnPrice:1050,  unitPrice:175.00},
+  {cat:"PETROL FULLY",  name:"Ultra93", grade:"5W-30", spec:"SP",  vol:"4L",    ctnPrice:1050,  unitPrice:175.00},
+  // PETROL SEMI
+  {cat:"PETROL SEMI",   name:"FX10",    grade:"5W-30", spec:"SN",  vol:"4L",    ctnPrice:558,   unitPrice:93.00},
+  {cat:"PETROL SEMI",   name:"FX11",    grade:"10W-40",spec:"SN",  vol:"4L",    ctnPrice:558,   unitPrice:93.00},
+  {cat:"PETROL SEMI",   name:"FX11",    grade:"10W-40",spec:"SN",  vol:"1L",    ctnPrice:612,   unitPrice:25.50},
+  {cat:"PETROL SEMI",   name:"Ultra83", grade:"5W-30", spec:"SN",  vol:"4L",    ctnPrice:672,   unitPrice:112.00},
+  {cat:"PETROL SEMI",   name:"Ultra88", grade:"10W-40",spec:"SN",  vol:"4L",    ctnPrice:672,   unitPrice:112.00},
+  // PETROL MINERAL
+  {cat:"PETROL MINERAL",name:"TS20",    grade:"20W-50",spec:"SN",  vol:"4L",    ctnPrice:315.6, unitPrice:52.60},
+  {cat:"PETROL MINERAL",name:"TS20",    grade:"20W-50",spec:"SN",  vol:"1L",    ctnPrice:372,   unitPrice:15.50},
+  {cat:"PETROL MINERAL",name:"TS21",    grade:"15W-40",spec:"SN",  vol:"4L",    ctnPrice:390,   unitPrice:65.00},
+  {cat:"PETROL MINERAL",name:"TS22",    grade:"10W-30",spec:"SN",  vol:"4L",    ctnPrice:357,   unitPrice:59.50},
+  {cat:"PETROL MINERAL",name:"TS23",    grade:"10W-30",spec:"SN",  vol:"3L",    ctnPrice:282,   unitPrice:47.00},
+  {cat:"PETROL MINERAL",name:"TS25",    grade:"20W-50",spec:"SH",  vol:"4L",    ctnPrice:264,   unitPrice:44.00},
+  {cat:"PETROL MINERAL",name:"TS25",    grade:"20W-50",spec:"SH",  vol:"1L",    ctnPrice:336,   unitPrice:14.00},
+  // DIESEL FULLY
+  {cat:"DIESEL FULLY",  name:"HD30",    grade:"15W-40",spec:"CJ4", vol:"7L",    ctnPrice:672,   unitPrice:168.00},
+  // DIESEL SEMI
+  {cat:"DIESEL SEMI",   name:"HD31",    grade:"15W-40",spec:"CI4", vol:"7L",    ctnPrice:472,   unitPrice:118.00},
+  {cat:"DIESEL SEMI",   name:"HD36",    grade:"10W-40",spec:"CJ4", vol:"7L",    ctnPrice:552,   unitPrice:138.00},
+  {cat:"DIESEL SEMI",   name:"HD36",    grade:"10W-40",spec:"CJ4", vol:"1L",    ctnPrice:540,   unitPrice:22.50},
+  {cat:"DIESEL SEMI",   name:"HD36",    grade:"10W-40",spec:"CJ4", vol:"1L",    ctnPrice:180,   unitPrice:22.50},
+  {cat:"DIESEL SEMI",   name:"HD38",    grade:"5W-30", spec:"CJ4", vol:"7L",    ctnPrice:552,   unitPrice:138.00},
+  // DIESEL MINERAL
+  {cat:"DIESEL MINERAL",name:"HD32",    grade:"15W-40",spec:"CH4", vol:"7L",    ctnPrice:372,   unitPrice:93.00},
+  {cat:"DIESEL MINERAL",name:"HD33",    grade:"20W-50",spec:"CH4", vol:"5L",    ctnPrice:375,   unitPrice:62.50},
+  {cat:"DIESEL MINERAL",name:"PAIL (01)",grade:"15W-40",spec:"CI4",vol:"18L",   ctnPrice:206,   unitPrice:206.00},
+  {cat:"DIESEL MINERAL",name:"PAIL (10)",grade:"15W-40",spec:"CI4",vol:"18L",   ctnPrice:201.5, unitPrice:201.50},
+  {cat:"DIESEL MINERAL",name:"PAIL (50)",grade:"15W-40",spec:"CI4",vol:"18L",   ctnPrice:199.5, unitPrice:199.50},
+  {cat:"DIESEL MINERAL",name:"PAIL (01)",grade:"20W-50",spec:"CH4",vol:"18L",   ctnPrice:190,   unitPrice:190.00},
+  {cat:"DIESEL MINERAL",name:"PAIL (10)",grade:"20W-50",spec:"CH4",vol:"18L",   ctnPrice:185,   unitPrice:185.00},
+  {cat:"DIESEL MINERAL",name:"PAIL (50)",grade:"20W-50",spec:"CH4",vol:"18L",   ctnPrice:181,   unitPrice:181.00},
+  // MOTORCYCLE
+  {cat:"MOTORCYCLE",    name:"4T50 FULLY",   grade:"5W-40", spec:"SN JASO MA2", vol:"1L", ctnPrice:1068, unitPrice:44.50},
+  {cat:"MOTORCYCLE",    name:"4T55 SEMI",    grade:"10W-40",spec:"SN JASO MA2", vol:"1L", ctnPrice:636,  unitPrice:26.50},
+  {cat:"MOTORCYCLE",    name:"4T56 SEMI",    grade:"15W-50",spec:"SN JASO MA2", vol:"1L", ctnPrice:672,  unitPrice:28.00},
+  {cat:"MOTORCYCLE",    name:"4T58 MINERAL", grade:"20W-50",spec:"SH JASO MA",  vol:"1L", ctnPrice:384,  unitPrice:16.00},
+  {cat:"MOTORCYCLE",    name:"TS25 MINERAL", grade:"20W-50",spec:"SH",          vol:"1L", ctnPrice:336,  unitPrice:14.00},
+  // OIL TREATMENT
+  {cat:"OIL TREATMENT", name:"OT NO.1 THIN",       grade:"",spec:"",vol:"300ML", ctnPrice:405, unitPrice:13.50},
+  {cat:"OIL TREATMENT", name:"OT NO.2 THICK",      grade:"",spec:"",vol:"300ML", ctnPrice:405, unitPrice:13.50},
+  {cat:"OIL TREATMENT", name:"OT STOP SMOKE THICK",grade:"",spec:"",vol:"500ML", ctnPrice:585, unitPrice:19.50},
+  // AUTO GEAR
+  {cat:"AUTO GEAR",     name:"ATF 6 SPEED FULLY", grade:"",spec:"",vol:"1L",  ctnPrice:684,  unitPrice:28.50},
+  {cat:"AUTO GEAR",     name:"ATF AUTOSYN FULLY",  grade:"",spec:"",vol:"1L",  ctnPrice:624,  unitPrice:26.00},
+  {cat:"AUTO GEAR",     name:"ATF CVT FULLY",      grade:"",spec:"",vol:"1L",  ctnPrice:768,  unitPrice:32.00},
+  {cat:"AUTO GEAR",     name:"ATF DIII",           grade:"",spec:"",vol:"1L",  ctnPrice:420,  unitPrice:17.50},
+  {cat:"AUTO GEAR",     name:"ATF DIII",           grade:"",spec:"",vol:"4L",  ctnPrice:348,  unitPrice:58.00},
+  {cat:"AUTO GEAR",     name:"ATF DIII",           grade:"",spec:"",vol:"18L", ctnPrice:203,  unitPrice:203.00},
+  {cat:"AUTO GEAR",     name:"ATF SPIII",          grade:"",spec:"",vol:"1L",  ctnPrice:492,  unitPrice:20.50},
+  // MANUAL GEAR
+  {cat:"MANUAL GEAR",   name:"EP 90",      grade:"GL5",spec:"",vol:"4L",  ctnPrice:309, unitPrice:51.50},
+  {cat:"MANUAL GEAR",   name:"EP 90",      grade:"GL5",spec:"",vol:"18L", ctnPrice:198, unitPrice:198.00},
+  {cat:"MANUAL GEAR",   name:"EP 140",     grade:"GL5",spec:"",vol:"4L",  ctnPrice:360, unitPrice:60.00},
+  {cat:"MANUAL GEAR",   name:"EP 140",     grade:"GL5",spec:"",vol:"18L", ctnPrice:208, unitPrice:208.00},
+  {cat:"MANUAL GEAR",   name:"EP 80/90 LSD",grade:"GL5",spec:"",vol:"4L", ctnPrice:324, unitPrice:54.00},
+  {cat:"MANUAL GEAR",   name:"EP 80/90 LSD",grade:"GL5",spec:"",vol:"18L",ctnPrice:202, unitPrice:202.00},
+  // COOLANT
+  {cat:"COOLANT",       name:"RED COOLANT",  grade:"",spec:"",vol:"1L",    ctnPrice:408, unitPrice:17.00},
+  {cat:"COOLANT",       name:"GREEN COOLANT",grade:"",spec:"",vol:"1L",    ctnPrice:384, unitPrice:16.00},
+  {cat:"COOLANT",       name:"GREEN COOLANT",grade:"",spec:"",vol:"500ML", ctnPrice:255, unitPrice:8.50},
+  // BRAKE OIL
+  {cat:"BRAKE OIL",     name:"DOT3",grade:"",spec:"",vol:"500ML", ctnPrice:304,   unitPrice:7.60},
+  {cat:"BRAKE OIL",     name:"DOT3",grade:"",spec:"",vol:"800ML", ctnPrice:252,   unitPrice:10.50},
+  {cat:"BRAKE OIL",     name:"DOT4",grade:"",spec:"",vol:"500ML", ctnPrice:492,   unitPrice:12.30},
+  {cat:"BRAKE OIL",     name:"DOT4",grade:"",spec:"",vol:"800ML", ctnPrice:412.8, unitPrice:17.20},
+  // OTHERS
+  {cat:"OTHERS", name:"P.Steering",             grade:"",spec:"",vol:"1L",     ctnPrice:523.2, unitPrice:21.80},
+  {cat:"OTHERS", name:"Engine Flush",            grade:"",spec:"",vol:"300ML",  ctnPrice:375,   unitPrice:12.50},
+  {cat:"OTHERS", name:"Radiator Flush",          grade:"",spec:"",vol:"300ML",  ctnPrice:375,   unitPrice:12.50},
+  {cat:"OTHERS", name:"Fuel Injector Cleaner",   grade:"",spec:"",vol:"300ML",  ctnPrice:519,   unitPrice:17.30},
+  {cat:"OTHERS", name:"Royal 50K Yellow ATF RESTORER",grade:"",spec:"",vol:"16FLOZ",ctnPrice:504,unitPrice:42.00},
+  {cat:"OTHERS", name:"Royal 50K Blue CVT RESTORER",  grade:"",spec:"",vol:"16FLOZ",ctnPrice:504,unitPrice:42.00},
+  {cat:"OTHERS", name:"AWS 68 Hydraulic",        grade:"",spec:"",vol:"18L",    ctnPrice:155,   unitPrice:155.00},
+  {cat:"OTHERS", name:"Grease Cv joint Lithium MOG2",grade:"",spec:"",vol:"400gm",ctnPrice:255, unitPrice:8.50},
+  {cat:"OTHERS", name:"Grease Bearing",          grade:"",spec:"",vol:"400gm",  ctnPrice:360,   unitPrice:12.00},
+  {cat:"OTHERS", name:"Grease Bearing",          grade:"",spec:"",vol:"15kg",   ctnPrice:198,   unitPrice:198.00},
+];
+
+PRODUCTS.forEach((p, i) => {
+  let parts = [p.name];
+  if (p.grade) parts.push(p.grade);
+  if (p.spec)  parts.push(p.spec);
+  parts.push(p.vol);
+  p.displayName = parts.join(' ');
+  p.id = i;
+});
+
+// ══════════════════════════════════════════
+// STATE
+// ══════════════════════════════════════════
+let productRows = [{ productId: null, qty: 1 }];
+let generatedMessage = '';
+
+// Load order history from localStorage
+function loadOrders() {
+  try { return JSON.parse(localStorage.getItem('alphalub_orders') || '[]'); }
+  catch { return []; }
+}
+function saveOrder(order) {
+  let orders = loadOrders();
+  orders.unshift(order); // newest first
+  if (orders.length > 20) orders = orders.slice(0, 20);
+  localStorage.setItem('alphalub_orders', JSON.stringify(orders));
+}
+
+// ══════════════════════════════════════════
+// NAV
+// ══════════════════════════════════════════
+function showPage(p) {
+  document.querySelectorAll('.page').forEach(el => el.classList.remove('active'));
+  document.querySelectorAll('.nav-tab').forEach(el => el.classList.remove('active'));
+  document.getElementById('page-' + p).classList.add('active');
+  document.querySelectorAll('.nav-tab')[p === 'order' ? 0 : 1].classList.add('active');
+  if (p === 'history') renderHistory();
+}
+
+// ══════════════════════════════════════════
+// DATE DEFAULT
+// ══════════════════════════════════════════
+(function() {
+  const today = new Date();
+  document.getElementById('orderDate').value =
+    `${today.getFullYear()}-${String(today.getMonth()+1).padStart(2,'0')}-${String(today.getDate()).padStart(2,'0')}`;
+})();
+
+// ══════════════════════════════════════════
+// CUSTOMER SEARCH
+// ══════════════════════════════════════════
+const custSearch  = document.getElementById('custSearch');
+const custDropdown= document.getElementById('custDropdown');
+const custHidden  = document.getElementById('customerSelect');
+
+function renderCustDropdown(list) {
+  if (!list.length) { custDropdown.classList.remove('open'); return; }
+  custDropdown.innerHTML = list.map(c =>
+    `<div class="drop-item" onclick="selectCustomer('${c.replace(/'/g,"\\'")}')">
+      <div class="prod-name">${c}</div></div>`).join('');
+  custDropdown.classList.add('open');
+}
+custSearch.addEventListener('click', () => {
+  custSearch.removeAttribute('readonly');
+  custSearch.select();
+  renderCustDropdown(CUSTOMERS);
+});
+custSearch.addEventListener('input', () => {
+  const q = custSearch.value.toLowerCase();
+  renderCustDropdown(q ? CUSTOMERS.filter(c => c.toLowerCase().includes(q)) : CUSTOMERS);
+});
+function selectCustomer(name) {
+  custHidden.value = name; custSearch.value = name;
+  custSearch.setAttribute('readonly', true); custDropdown.classList.remove('open');
+}
+
+// ══════════════════════════════════════════
+// PRODUCT ROWS
+// ══════════════════════════════════════════
+function addProductRow() {
+  productRows.push({ productId: null, qty: 1 });
+  renderRows();
+  setTimeout(() => openRowDropdown(productRows.length - 1), 60);
+}
+function removeRow(idx) {
+  if (productRows.length === 1) { productRows[0] = { productId: null, qty: 1 }; }
+  else { productRows.splice(idx, 1); }
+  renderRows();
+}
+function setRowProduct(rowIdx, prodId) {
+  productRows[rowIdx].productId = prodId;
+  closeAllDropdowns(); renderRows();
+}
+function setRowQty(rowIdx, val) {
+  productRows[rowIdx].qty = Math.max(1, parseInt(val) || 1);
+  updateTotal();
+}
+function openRowDropdown(rowIdx) {
+  closeAllDropdowns();
+  const dd = document.getElementById(`prd-dd-${rowIdx}`);
+  if (!dd) return;
+  dd.classList.add('open');
+  const si = document.getElementById(`prd-si-${rowIdx}`);
+  if (si) { si.value = ''; si.focus(); renderRowDropdownItems(rowIdx, ''); }
+}
+function closeAllDropdowns() {
+  document.querySelectorAll('.prod-row-dropdown').forEach(d => d.classList.remove('open'));
+}
+function renderRowDropdownItems(rowIdx, q) {
+  const dd = document.getElementById(`prd-dd-${rowIdx}`);
+  if (!dd) return;
+  const matches = q
+    ? PRODUCTS.filter(p =>
+        p.displayName.toLowerCase().includes(q.toLowerCase()) ||
+        p.cat.toLowerCase().includes(q.toLowerCase()) ||
+        p.grade.toLowerCase().includes(q.toLowerCase()))
+    : PRODUCTS;
+  let html = ''; let lastCat = '';
+  matches.forEach(p => {
+    if (p.cat !== lastCat) { html += `<div class="drop-cat">${p.cat}</div>`; lastCat = p.cat; }
+    html += `<div class="drop-item" onmousedown="setRowProduct(${rowIdx},${p.id})">
+      <div class="prod-name">${p.displayName}</div>
+      <div class="prod-meta">CTN: RM${p.ctnPrice.toFixed(2)} &nbsp;·&nbsp; Unit: RM${p.unitPrice.toFixed(2)}</div></div>`;
+  });
+  const itemsDiv = dd.querySelector('.prd-items');
+  if (itemsDiv) itemsDiv.innerHTML = html;
+}
+function buildDropdownItems(rowIdx) {
+  let html = ''; let lastCat = '';
+  PRODUCTS.forEach(p => {
+    if (p.cat !== lastCat) { html += `<div class="drop-cat">${p.cat}</div>`; lastCat = p.cat; }
+    html += `<div class="drop-item" onmousedown="setRowProduct(${rowIdx},${p.id})">
+      <div class="prod-name">${p.displayName}</div>
+      <div class="prod-meta">CTN: RM${p.ctnPrice.toFixed(2)} &nbsp;·&nbsp; Unit: RM${p.unitPrice.toFixed(2)}</div></div>`;
+  });
+  return html;
+}
+function renderRows() {
+  const container = document.getElementById('productRows');
+  container.innerHTML = productRows.map((row, idx) => {
+    const p = row.productId !== null ? PRODUCTS[row.productId] : null;
+    const label = p ? p.displayName : '— Select Product —';
+    return `<div class="prod-row">
+      <div class="prod-row-select-wrap">
+        <button class="prod-row-btn ${p?'selected':''}" onclick="openRowDropdown(${idx})">${label}</button>
+        <span class="prod-row-chevron">▾</span>
+        <div class="prod-row-dropdown" id="prd-dd-${idx}">
+          <input class="prd-search" id="prd-si-${idx}" type="text" placeholder="Search..."
+            autocomplete="off" oninput="renderRowDropdownItems(${idx},this.value)">
+          <div class="prd-items">${buildDropdownItems(idx)}</div>
+        </div>
+      </div>
+      <input class="qty-input" type="number" min="1" value="${row.qty}"
+        oninput="setRowQty(${idx},this.value)" onchange="setRowQty(${idx},this.value)">
+      <button class="btn-remove-row" onclick="removeRow(${idx})">✕</button>
+    </div>`;
+  }).join('');
+  updateTotal();
+}
+function updateTotal() {
+  const total = productRows.reduce((s, row) => {
+    if (row.productId === null) return s;
+    return s + PRODUCTS[row.productId].ctnPrice * row.qty;
+  }, 0);
+  document.getElementById('totalAmount').textContent = 'RM ' + total.toFixed(2);
+}
+
+// Outside click
+document.addEventListener('click', e => {
+  if (!e.target.closest('.prod-row-select-wrap')) closeAllDropdowns();
+  if (!e.target.closest('#custWrap')) {
+    custDropdown.classList.remove('open');
+    if (!custHidden.value) custSearch.value = '';
+  }
+});
+
+renderRows();
+
+// ══════════════════════════════════════════
+// DATE FORMAT
+// ══════════════════════════════════════════
+function formatDate(dateStr) {
+  if (!dateStr) return '';
+  const d = new Date(dateStr + 'T00:00:00');
+  const days = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+  return `${String(d.getDate()).padStart(2,'0')}/${String(d.getMonth()+1).padStart(2,'0')}/${d.getFullYear()} (${days[d.getDay()]})`;
+}
+
+// ══════════════════════════════════════════
+// GENERATE
+// ══════════════════════════════════════════
+function generateMessage() {
+  const customer  = custHidden.value;
+  const dateVal   = document.getElementById('orderDate').value;
+  const remarks   = document.getElementById('remarks').value.trim();
+  const billMonth = document.getElementById('billMonth').value;
+  const billYear  = document.getElementById('billYear').value;
+
+  if (!customer)  { alert('Please select a customer.'); return; }
+  if (!dateVal)   { alert('Please select a date.'); return; }
+  const filledRows = productRows.filter(r => r.productId !== null);
+  if (!filledRows.length) { alert('Please add at least one product.'); return; }
+
+  const total = filledRows.reduce((s, r) => s + PRODUCTS[r.productId].ctnPrice * r.qty, 0);
+  const totalCartons = filledRows.reduce((s, r) => s + r.qty, 0);
+  const orderLines = filledRows.map(r => {
+    const p = PRODUCTS[r.productId];
+    return `${r.qty} * ${p.displayName} - RM${p.unitPrice.toFixed(2)}`;
+  }).join('\n');
+
+  let msg = `${customer}\n\n`;
+  msg += `${formatDate(dateVal)}\n`;
+  msg += `*Order* :\n\n`;
+  msg += `${orderLines}\n\n`;
+  msg += `*Total* :\nRM${total.toFixed(2)}\n\n`;
+  if (remarks) msg += `*Remarks* :\n${remarks}\n\n`;
+  msg += `Bill ${billMonth} ${billYear}`;
+
+  generatedMessage = msg;
+
+  // Save to history
+  saveOrder({
+    id: Date.now(),
+    customer,
+    date: dateVal,
+    billMonth,
+    billYear,
+    remarks,
+    total,
+    totalCartons,
+    items: filledRows.map(r => ({
+      productId: r.productId,
+      displayName: PRODUCTS[r.productId].displayName,
+      qty: r.qty,
+      unitPrice: PRODUCTS[r.productId].unitPrice,
+      ctnPrice: PRODUCTS[r.productId].ctnPrice
+    }))
+  });
+
+  const preview = document.getElementById('previewBox');
+  preview.textContent = msg;
+  preview.classList.add('show');
+  document.getElementById('btnCopy').classList.add('show');
+  document.getElementById('btnWa').classList.add('show');
+  preview.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+}
+
+function copyMessage() {
+  navigator.clipboard.writeText(generatedMessage).then(() => {
+    const btn = document.getElementById('btnCopy');
+    btn.textContent = '✅ Copied!';
+    setTimeout(() => btn.textContent = '📋 Copy Message', 2000);
+  });
+}
+function openWhatsApp() {
+  const encoded = encodeURIComponent(generatedMessage);
+  window.open(`https://wa.me/601133633168?text=${encoded}`, '_blank');
+}
+
+// ══════════════════════════════════════════
+// DASHBOARD / HISTORY
+// ══════════════════════════════════════════
+
+// Populate product filter dropdown
+(function() {
+  const sel = document.getElementById('filterProduct');
+  PRODUCTS.forEach(p => {
+    const opt = document.createElement('option');
+    opt.value = p.displayName;
+    opt.textContent = p.displayName;
+    sel.appendChild(opt);
+  });
+})();
+
+function clearFilters() {
+  document.getElementById('filterYear').value = '';
+  document.getElementById('filterMonth').value = '';
+  document.getElementById('filterDateFrom').value = '';
+  document.getElementById('filterDateTo').value = '';
+  document.getElementById('filterCustomer').value = '';
+  document.getElementById('filterProduct').value = '';
+  renderHistory();
+}
+
+function renderHistory() {
+  let orders = loadOrders();
+
+  // Filters
+  const fy   = document.getElementById('filterYear').value;
+  const fm   = document.getElementById('filterMonth').value;
+  const fd1  = document.getElementById('filterDateFrom').value;
+  const fd2  = document.getElementById('filterDateTo').value;
+  const fc   = document.getElementById('filterCustomer').value.toLowerCase();
+  const fp   = document.getElementById('filterProduct').value;
+  const sort = document.getElementById('sortBy').value;
+
+  if (fy)  orders = orders.filter(o => o.billYear === fy);
+  if (fm)  orders = orders.filter(o => o.billMonth === fm);
+  if (fd1) orders = orders.filter(o => o.date >= fd1);
+  if (fd2) orders = orders.filter(o => o.date <= fd2);
+  if (fc)  orders = orders.filter(o => o.customer.toLowerCase().includes(fc));
+  if (fp)  orders = orders.filter(o => (o.items||[]).some(i => i.displayName === fp));
+
+  // Sort
+  orders.sort((a, b) => {
+    if (sort === 'date_desc')    return new Date(b.date) - new Date(a.date);
+    if (sort === 'date_asc')     return new Date(a.date) - new Date(b.date);
+    if (sort === 'total_desc')   return b.total - a.total;
+    if (sort === 'total_asc')    return a.total - b.total;
+    if (sort === 'ctn_desc')     return (b.totalCartons||0) - (a.totalCartons||0);
+    if (sort === 'customer_asc') return a.customer.localeCompare(b.customer);
+    return 0;
+  });
+
+  // Summary stats
+  const totalSale    = orders.reduce((s, o) => s + o.total, 0);
+  const totalCartons = orders.reduce((s, o) => s + (o.totalCartons || 0), 0);
+  document.getElementById('histSummary').innerHTML = `
+    <div class="stat-box"><div class="stat-label">Total Sale</div><div class="stat-value">RM ${totalSale.toFixed(2)}</div></div>
+    <div class="stat-box"><div class="stat-label">Total Cartons</div><div class="stat-value">${totalCartons} 箱</div></div>
+    <div class="stat-box"><div class="stat-label">Orders</div><div class="stat-value">${orders.length}</div></div>
+    <div class="stat-box"><div class="stat-label">Customers</div><div class="stat-value">${new Set(orders.map(o=>o.customer)).size}</div></div>`;
+
+  // Product summary
+  const prodMap = {};
+  orders.forEach(o => (o.items||[]).forEach(item => {
+    prodMap[item.displayName] = (prodMap[item.displayName] || 0) + item.qty;
+  }));
+  const prodEntries = Object.entries(prodMap).sort((a,b) => b[1]-a[1]);
+  const prodCard = document.getElementById('prodSummaryCard');
+  if (prodEntries.length) {
+    prodCard.style.display = 'block';
+    document.getElementById('prodSummaryRows').innerHTML = prodEntries.map(([name, qty]) =>
+      `<div class="prod-summary-row">
+        <span class="prod-summary-name">${name}</span>
+        <span class="prod-summary-qty">${qty} 箱</span>
+      </div>`).join('');
+  } else { prodCard.style.display = 'none'; }
+
+  // Order cards
+  const list = document.getElementById('historyList');
+  if (!orders.length) {
+    list.innerHTML = '<div class="empty-hist">没有记录<br><span style="font-size:0.72rem">Generate an order to see history</span></div>';
+    return;
+  }
+  list.innerHTML = orders.map(o => {
+    const tags = (o.items||[]).map(item =>
+      `<span class="prod-tag">${item.displayName} <span>×${item.qty}</span></span>`).join('');
+    return `<div class="order-card">
+      <div class="order-card-top">
+        <div style="flex:1;min-width:0">
+          <div class="order-card-customer">${o.customer}</div>
+          <div class="order-card-date">${formatDate(o.date)}</div>
+          <div class="order-card-bill" style="margin-top:2px">Bill: ${o.billMonth} ${o.billYear} &nbsp;·&nbsp; ${o.totalCartons||0} 箱</div>
+          ${o.remarks ? `<div class="order-card-bill" style="margin-top:2px;color:#aaa">📝 ${o.remarks}</div>` : ''}
+          <div class="order-card-items" style="margin-top:6px">${tags}</div>
+        </div>
+        <div style="text-align:right;flex-shrink:0">
+          <div class="order-card-total">RM ${o.total.toFixed(2)}</div>
+        </div>
+      </div>
+      <div class="order-card-actions">
+        <button class="btn-edit-order" onclick="openEditModal('${o.id}')">✏️ Edit</button>
+        <button class="btn-del-order"  onclick="deleteOrder('${o.id}')">🗑 Delete</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+// ── DELETE ────────────────────────────────
+function deleteOrder(id) {
+  if (!confirm('Delete this order?')) return;
+  let orders = loadOrders().filter(o => String(o.id) !== String(id));
+  localStorage.setItem('alphalub_orders', JSON.stringify(orders));
+  renderHistory();
+}
+
+// ── EDIT MODAL ────────────────────────────
+let editItems = [];
+
+// Edit modal customer search
+const editCustSearch   = document.getElementById('editCustSearch');
+const editCustDropdown = document.getElementById('editCustDropdown');
+const editCustVal      = document.getElementById('editCustomerVal');
+
+function renderEditCustDropdown(list) {
+  if (!list.length) { editCustDropdown.classList.remove('open'); return; }
+  editCustDropdown.innerHTML = list.map(c =>
+    `<div class="drop-item" onclick="selectEditCustomer('${c.replace(/'/g,"\\'")}')">
+      <div class="prod-name">${c}</div></div>`).join('');
+  editCustDropdown.classList.add('open');
+}
+editCustSearch.addEventListener('click', () => {
+  editCustSearch.removeAttribute('readonly');
+  editCustSearch.select();
+  renderEditCustDropdown(CUSTOMERS);
+});
+editCustSearch.addEventListener('input', () => {
+  const q = editCustSearch.value.toLowerCase();
+  renderEditCustDropdown(q ? CUSTOMERS.filter(c => c.toLowerCase().includes(q)) : CUSTOMERS);
+});
+function selectEditCustomer(name) {
+  editCustVal.value = name; editCustSearch.value = name;
+  editCustSearch.setAttribute('readonly', true);
+  editCustDropdown.classList.remove('open');
+}
+document.getElementById('editCustWrap').addEventListener('click', e => e.stopPropagation());
+
+function openEditModal(id) {
+  const orders = loadOrders();
+  const o = orders.find(x => String(x.id) === String(id));
+  if (!o) return;
+
+  document.getElementById('editOrderId').value   = o.id;
+  editCustSearch.value                           = o.customer;
+  editCustSearch.setAttribute('readonly', true);
+  editCustVal.value                              = o.customer;
+  document.getElementById('editDate').value      = o.date;
+  document.getElementById('editBillMonth').value = o.billMonth;
+  document.getElementById('editBillYear').value  = o.billYear;
+  document.getElementById('editRemarks').value   = o.remarks || '';
+
+  editItems = (o.items || []).map(item => ({
+    productId: item.productId,
+    qty: item.qty
+  }));
+  renderEditRows();
+  document.getElementById('editModal').classList.add('open');
+}
+
+function closeEditModal() {
+  document.getElementById('editModal').classList.remove('open');
+  editCustDropdown.classList.remove('open');
+}
+
+function addEditProductRow() {
+  editItems.push({ productId: null, qty: 1 });
+  renderEditRows();
+}
+function removeEditRow(idx) {
+  if (editItems.length === 1) { editItems[0] = { productId: null, qty: 1 }; }
+  else editItems.splice(idx, 1);
+  renderEditRows();
+}
+function setEditRowProduct(idx, val) {
+  editItems[idx].productId = val === '' ? null : parseInt(val);
+  updateEditTotal();
+}
+function setEditRowQty(idx, val) {
+  editItems[idx].qty = Math.max(1, parseInt(val) || 1);
+  updateEditTotal();
+}
+function renderEditRows() {
+  const opts = PRODUCTS.map(p =>
+    `<option value="${p.id}">${p.displayName} | CTN:RM${p.ctnPrice} Unit:RM${p.unitPrice}</option>`).join('');
+  document.getElementById('editProductRows').innerHTML = editItems.map((item, idx) =>
+    `<div class="modal-prod-row">
+      <select class="modal-prod-select" onchange="setEditRowProduct(${idx},this.value)">
+        <option value="">— Select —</option>${opts}
+      </select>
+      <input class="qty-input modal-qty" type="number" min="1" value="${item.qty}"
+        oninput="setEditRowQty(${idx},this.value)" onchange="setEditRowQty(${idx},this.value)">
+      <button class="btn-remove-row" onclick="removeEditRow(${idx})">✕</button>
+    </div>`).join('');
+  // Set selected values
+  const selects = document.querySelectorAll('#editProductRows .modal-prod-select');
+  editItems.forEach((item, idx) => {
+    if (item.productId !== null) selects[idx].value = item.productId;
+  });
+  updateEditTotal();
+}
+function updateEditTotal() {
+  const total = editItems.reduce((s, item) => {
+    if (item.productId === null) return s;
+    return s + PRODUCTS[item.productId].ctnPrice * item.qty;
+  }, 0);
+  document.getElementById('editTotalAmount').textContent = 'RM ' + total.toFixed(2);
+}
+
+function saveEditOrder() {
+  const id       = document.getElementById('editOrderId').value;
+  const customer = editCustVal.value;
+  const date     = document.getElementById('editDate').value;
+  const billMonth= document.getElementById('editBillMonth').value;
+  const billYear = document.getElementById('editBillYear').value;
+  const remarks  = document.getElementById('editRemarks').value.trim();
+
+  if (!customer) { alert('Please select a customer.'); return; }
+  if (!date)     { alert('Please select a date.'); return; }
+  const filledItems = editItems.filter(i => i.productId !== null);
+  if (!filledItems.length) { alert('Please add at least one product.'); return; }
+
+  const total        = filledItems.reduce((s,i) => s + PRODUCTS[i.productId].ctnPrice * i.qty, 0);
+  const totalCartons = filledItems.reduce((s,i) => s + i.qty, 0);
+
+  let orders = loadOrders();
+  const idx = orders.findIndex(o => String(o.id) === String(id));
+  if (idx === -1) return;
+  orders[idx] = {
+    ...orders[idx], customer, date, billMonth, billYear, remarks,
+    total, totalCartons,
+    items: filledItems.map(i => ({
+      productId: i.productId,
+      displayName: PRODUCTS[i.productId].displayName,
+      qty: i.qty,
+      unitPrice: PRODUCTS[i.productId].unitPrice,
+      ctnPrice: PRODUCTS[i.productId].ctnPrice
+    }))
+  };
+  localStorage.setItem('alphalub_orders', JSON.stringify(orders));
+  closeEditModal();
+  renderHistory();
+}
+
+// Close modal on overlay click
+document.getElementById('editModal').addEventListener('click', function(e) {
+  if (e.target === this) closeEditModal();
+});
+</script>
+</body>
+</html>
