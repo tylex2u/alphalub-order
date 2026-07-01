@@ -250,7 +250,38 @@ textarea { resize: vertical; min-height: 60px; }
 .prod-summary-name { color: #ccc; flex: 1; }
 .prod-summary-qty { color: #f0b429; font-weight: 600; width: 60px; text-align: right; flex-shrink: 0; }
 
-/* ── EDIT MODAL ── */
+/* ── CUSTOM PRODUCT ROW ── */
+.custom-prod-fields {
+  display: flex; flex-direction: column; gap: 5px;
+  flex: 1; min-width: 0;
+}
+.custom-prod-name {
+  width: 100%; background: #0f1117; border: 1px solid #f0b429;
+  border-radius: 8px; color: #e8e8e8; padding: 8px 10px;
+  font-size: 0.82rem; outline: none;
+}
+.custom-price-row {
+  display: flex; gap: 5px;
+}
+.custom-price-input {
+  flex: 1; background: #0f1117; border: 1px solid #2a2d3a;
+  border-radius: 8px; color: #e8e8e8; padding: 7px 8px;
+  font-size: 0.75rem; outline: none; text-align: center; min-width: 0;
+}
+.custom-price-input:focus { border-color: #f0b429; }
+.custom-price-label {
+  font-size: 0.62rem; color: #666; text-align: center; margin-top: 2px;
+}
+
+/* ── ADD BUTTONS ROW ── */
+.add-btns-row { display: flex; gap: 8px; margin-bottom: 4px; }
+.add-btns-row button { flex: 1; }
+.btn-add-custom {
+  background: transparent; border: 1.5px dashed #7a6aaa;
+  border-radius: 8px; color: #9a8acc; padding: 11px; font-size: 0.82rem;
+  font-weight: 600; cursor: pointer; transition: background 0.2s;
+}
+.btn-add-custom:hover { background: #1a1525; }
 .modal-overlay {
   display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.75);
   z-index: 500; overflow-y: auto; padding: 20px 16px;
@@ -330,7 +361,10 @@ textarea { resize: vertical; min-height: 60px; }
     <span class="ph-qty">QTY</span>
   </div>
   <div id="productRows"></div>
-  <button class="btn-add-row" onclick="addProductRow()">+ Add Product</button>
+  <div class="add-btns-row">
+    <button class="btn-add-row" onclick="addProductRow()">+ From List</button>
+    <button class="btn-add-custom" onclick="addCustomRow()">+ Custom</button>
+  </div>
   <div class="total-row">
     <span class="total-label">TOTAL (CTN × QTY)</span>
     <span class="total-amount" id="totalAmount">RM 0.00</span>
@@ -617,7 +651,7 @@ PRODUCTS.forEach((p, i) => {
 // ══════════════════════════════════════════
 // STATE
 // ══════════════════════════════════════════
-let productRows = [{ productId: null, qty: 1 }];
+let productRows = [{ productId: null, qty: 1, custom: false }];
 let generatedMessage = '';
 
 // Load order history from localStorage
@@ -684,12 +718,21 @@ function selectCustomer(name) {
 // PRODUCT ROWS
 // ══════════════════════════════════════════
 function addProductRow() {
-  productRows.push({ productId: null, qty: 1 });
+  productRows.push({ productId: null, qty: 1, custom: false });
   renderRows();
   setTimeout(() => openRowDropdown(productRows.length - 1), 60);
 }
+function addCustomRow() {
+  productRows.push({ custom: true, customName: '', customCtn: '', customUnit: '', qty: 1 });
+  renderRows();
+  // focus the name input of new row
+  setTimeout(() => {
+    const inputs = document.querySelectorAll('.custom-prod-name');
+    if (inputs.length) inputs[inputs.length - 1].focus();
+  }, 60);
+}
 function removeRow(idx) {
-  if (productRows.length === 1) { productRows[0] = { productId: null, qty: 1 }; }
+  if (productRows.length === 1) { productRows[0] = { productId: null, qty: 1, custom: false }; }
   else { productRows.splice(idx, 1); }
   renderRows();
 }
@@ -699,6 +742,10 @@ function setRowProduct(rowIdx, prodId) {
 }
 function setRowQty(rowIdx, val) {
   productRows[rowIdx].qty = Math.max(1, parseInt(val) || 1);
+  updateTotal();
+}
+function setCustomField(rowIdx, field, val) {
+  productRows[rowIdx][field] = val;
   updateTotal();
 }
 function openRowDropdown(rowIdx) {
@@ -744,6 +791,32 @@ function buildDropdownItems(rowIdx) {
 function renderRows() {
   const container = document.getElementById('productRows');
   container.innerHTML = productRows.map((row, idx) => {
+    if (row.custom) {
+      return `<div class="prod-row" style="align-items:flex-start">
+        <div class="custom-prod-fields">
+          <input class="custom-prod-name" type="text" placeholder="Product name..."
+            value="${row.customName || ''}"
+            oninput="setCustomField(${idx},'customName',this.value)">
+          <div class="custom-price-row">
+            <div style="flex:1;min-width:0">
+              <input class="custom-price-input" type="number" min="0" step="0.01"
+                placeholder="CTN price" value="${row.customCtn || ''}"
+                oninput="setCustomField(${idx},'customCtn',this.value)">
+              <div class="custom-price-label">CTN (RM)</div>
+            </div>
+            <div style="flex:1;min-width:0">
+              <input class="custom-price-input" type="number" min="0" step="0.01"
+                placeholder="Unit price" value="${row.customUnit || ''}"
+                oninput="setCustomField(${idx},'customUnit',this.value)">
+              <div class="custom-price-label">Unit (RM)</div>
+            </div>
+          </div>
+        </div>
+        <input class="qty-input" type="number" min="1" value="${row.qty}"
+          oninput="setRowQty(${idx},this.value)" onchange="setRowQty(${idx},this.value)">
+        <button class="btn-remove-row" onclick="removeRow(${idx})">✕</button>
+      </div>`;
+    }
     const p = row.productId !== null ? PRODUCTS[row.productId] : null;
     const label = p ? p.displayName : '— Select Product —';
     return `<div class="prod-row">
@@ -765,6 +838,10 @@ function renderRows() {
 }
 function updateTotal() {
   const total = productRows.reduce((s, row) => {
+    if (row.custom) {
+      const ctn = parseFloat(row.customCtn) || 0;
+      return s + ctn * row.qty;
+    }
     if (row.productId === null) return s;
     return s + PRODUCTS[row.productId].ctnPrice * row.qty;
   }, 0);
@@ -804,12 +881,22 @@ function generateMessage() {
 
   if (!customer)  { alert('Please select a customer.'); return; }
   if (!dateVal)   { alert('Please select a date.'); return; }
-  const filledRows = productRows.filter(r => r.productId !== null);
+  const filledRows = productRows.filter(r => {
+    if (r.custom) return r.customName && r.customName.trim();
+    return r.productId !== null;
+  });
   if (!filledRows.length) { alert('Please add at least one product.'); return; }
 
-  const total = filledRows.reduce((s, r) => s + PRODUCTS[r.productId].ctnPrice * r.qty, 0);
+  const total = filledRows.reduce((s, r) => {
+    if (r.custom) return s + (parseFloat(r.customCtn) || 0) * r.qty;
+    return s + PRODUCTS[r.productId].ctnPrice * r.qty;
+  }, 0);
   const totalCartons = filledRows.reduce((s, r) => s + r.qty, 0);
   const orderLines = filledRows.map(r => {
+    if (r.custom) {
+      const unit = parseFloat(r.customUnit) || 0;
+      return `${r.qty} * ${r.customName.trim()} - RM${unit.toFixed(2)}`;
+    }
     const p = PRODUCTS[r.productId];
     return `${r.qty} * ${p.displayName} - RM${p.unitPrice.toFixed(2)}`;
   }).join('\n');
@@ -834,13 +921,20 @@ function generateMessage() {
     remarks,
     total,
     totalCartons,
-    items: filledRows.map(r => ({
+    items: filledRows.map(r => r.custom ? {
+      productId: null,
+      displayName: r.customName.trim(),
+      qty: r.qty,
+      unitPrice: parseFloat(r.customUnit) || 0,
+      ctnPrice: parseFloat(r.customCtn) || 0,
+      custom: true
+    } : {
       productId: r.productId,
       displayName: PRODUCTS[r.productId].displayName,
       qty: r.qty,
       unitPrice: PRODUCTS[r.productId].unitPrice,
       ctnPrice: PRODUCTS[r.productId].ctnPrice
-    }))
+    })
   });
 
   const preview = document.getElementById('previewBox');
